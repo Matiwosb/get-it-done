@@ -3,12 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://get-it-done-1:beproductive@localhost:8889/get-it-done'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://get-it-done:beproductive@localhost:8889/get-it-done'
 app.config['SQLALCHEMY_ECHO'] = True
 
 db = SQLAlchemy(app)
 
-'''class Task(db.Model):
+class Task(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
@@ -16,7 +16,7 @@ db = SQLAlchemy(app)
 
     def __init__(self, name):
         self.name = name 
-        self.completed = False#'''
+        self.completed = False
 
 
 class User(db.Model):
@@ -28,12 +28,41 @@ class User(db.Model):
         self.email = email
         self.password = password
 
-@app.route('/login')
+@app.route('/login', methods=['POST', 'GET'])
 def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+        if user and user.password == password:
+            # TODO - "remember" that the user has logged in
+            return redirect('/')
+        else:
+            #TODO - explain why login failed
+            return '<h1>Error!</h1>'
+
     return render_template('login.html')
 
-@app.route('/register')
+@app.route('/register', methods=['POST', 'GET'])
 def register():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        verify = request.form['verify']
+       
+        #TODO - validate user's date
+        
+        existing_user = User.query.filter_by(email=email).first()
+        if not existing_user:
+            new_user = User(email, password)
+            db.session.add(new_user)
+            db.session.commit()
+            # TODO - "remember" the user
+            return redirect('/')
+        else:
+            #TODO - user better response messaging
+            return "<h1> Duplicate user</h1>"
+        
     return render_template('register.html')
 
  
@@ -47,7 +76,7 @@ def index():
 
 
     tasks = Task.query.filter_by(completed = False).all()
-    completed = Task.query.filter_by(completed = False).all()
+    completed_tasks = Task.query.filter_by(completed = False).all()
     return render_template('todos.html', title="Get It Done!", tasks=tasks, 
     completed_tasks=completed_tasks)
 
