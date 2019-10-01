@@ -24,7 +24,7 @@ class Task(db.Model):
 
 
 class User(db.Model):
-    id = db.Column(db.Integer, primery_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True)
     password = db.Column(db.String(120))
 
@@ -54,7 +54,7 @@ def login():
             print(session)
             return redirect('/')
         else:
-            flash('User password incorrect, or user does not existS', 'error')
+            flash('User password incorrect, or user does not exists', 'error')
 
     return render_template('login.html')
 
@@ -64,40 +64,22 @@ def register():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        verify = request.form['verify']
+        verify_password = request.form['verify_password']
 
-    if username == "":
-        usernameError = "Please enter a valid username."
-    elif len(username) <= 3 or len(username) > 20:
-        usernameError = ""
-    elif " " in username:
-        usernameError = "Your username cannot contain any spaces."
-        username = ""
+        existing_user = User.query.filter_by(username=username).first()
 
-    if password == "":
-        passwordError = "Please enter a valid password."
-    elif len(password) < 3 or len(password) > 20:
-        passwordError = "Password must be at least 3 to 20 characters long."
-    elif " " in password:
-        passwordError = "Your cannot contain any spaces"
-
-    if verify_password == "" or verify_password != password:
-        verify = "Password do not match. Please try again."
-        verify = ""
-    if email != "":
-        if not re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-]+\.[a-zA-Z0-9-.]+$)", email):
-            emailError = "Not a valid email address."
-
-        existing_user = User.query.filter_by(email=email).first()
-        if not existing_user:
-            new_user = User(email, password)
+        if password != verify:
+            flash('Password does not match', "error")
+        elif len(username) < 3 or len(password) < 3:
+            flash('Username and password must be more than 3 characters', 'error')
+        elif existing_user:
+            flash('User already exists', 'error')
+        else:
+            new_user = User(username, password)
             db.session.add(new_user)
             db.session.commit()
-            session['email'] = email
+            session['username'] = username
             return redirect('/')
-        else:
-            # TODO - user better response messaging
-            return "<h1> Duplicate user</h1>"
 
     return render_template('register.html')
 
